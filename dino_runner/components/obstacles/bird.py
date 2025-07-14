@@ -1,5 +1,5 @@
 from dino_runner.utils.constants import BIRD
-from dino_runner.components.obstacles.obstacle import Obstacle
+from dino_runner.components.obstacles import Obstacle
 
 
 class Bird(Obstacle):
@@ -14,3 +14,4 @@ class Bird(Obstacle):
 
         if self.step_index >= 10:
             self.step_index = 0
+
