@@ -6,7 +6,7 @@ import random
 class Bird(Obstacle):
     def __init__(self):
         super().__init__(BIRD, 0)
-        self.rect.y = random.choice([200, 230, 260])
+        self.rect.y = random.choice([120, 150, 180, 210, 240, 260])  # Alturas seguras, nunca abaixo da estrada
         self.step_index = 0
 
     def draw(self, screen):

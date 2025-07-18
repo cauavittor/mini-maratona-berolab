@@ -44,6 +44,11 @@ class Dino(pygame.sprite.Sprite):
 
   def update(self, user_input):
 
+    # Verificar se o poder do martelo acabou
+    if self.has_power_up and pygame.time.get_ticks() > self.power_up_time:
+      self.has_power_up = False
+      self.type = DEFAULT_TYPE
+
     if self.is_jumping:
       self.jump()
     elif self.is_duck:
@@ -75,29 +80,27 @@ class Dino(pygame.sprite.Sprite):
 
   def run(self):  
 
-    if self.type == SHIELD_TYPE:
+    if self.has_power_up and self.type == "hammer":
+      self.image = RUNNING_HAMMER[self.step_index // 5]
+    elif self.type == SHIELD_TYPE:
       self.image = RUNNING_SHIELD[self.step_index // 5]
-    elif self.type == RUNNING_HAMMER:     
-      [self.step_index // 5]  
     else: 
       self.image = RUNNING[self.step_index // 5] 
 
-    self.image = RUNNING[self.step_index // 5]
     self.rect.x = self.X_POS
     self.rect.y = self.Y_POS
     self.step_index += 1
 
   def jump(self):
-    if self.type == SHIELD_TYPE:
-        self.image = JUMPING_SHIELD
-    elif self.type == "hammer":
+    if self.has_power_up and self.type == "hammer":
         self.image = JUMPING_HAMMER
+    elif self.type == SHIELD_TYPE:
+        self.image = JUMPING_SHIELD
     else:
         self.image = JUMPING
 
-    self.image = JUMPING
-    self.rect.y -= self.jump_velocity * 4.2
-    self.jump_velocity -= 0.9
+    self.rect.y -= int(self.jump_velocity * 3.2)
+    self.jump_velocity -= 0.7
 
     if self.jump_velocity < -10:
       self.rect.y = self.Y_POS
@@ -107,13 +110,13 @@ class Dino(pygame.sprite.Sprite):
 
   def duck(self):
 
-    if self.type == SHIELD_TYPE:
-        self.image = DUCKING_SHIELD[self.step_index // 5]
-    elif self.type == "hammer":
+    if self.has_power_up and self.type == "hammer":
         self.image = DUCKING_HAMMER[self.step_index // 5]
+    elif self.type == SHIELD_TYPE:
+        self.image = DUCKING_SHIELD[self.step_index // 5]
     else:
         self.image = DUCKING[self.step_index // 5]
-    self.image = DUCKING[self.step_index // 5]
+    
     self.rect.x = self.X_POS
     self.rect.y = self.Y_POS_DUCK
     self.step_index += 1
@@ -121,7 +124,7 @@ class Dino(pygame.sprite.Sprite):
   def activate_hammer_power(self):
     self.has_power_up = True
     self.type = "hammer"
-    self.power_up_time = pygame.time.get_ticks() + 5000 
+    self.power_up_time = pygame.time.get_ticks() + 4000  # 4 segundos
 
 
 

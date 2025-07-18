@@ -6,6 +6,8 @@ from dino_runner.components.obstacles.bird import Bird
 import random
 from dino_runner.components.cloud import Cloud
 from dino_runner.components.powerups.hammer import Hammer
+import os
+
 class Game():
  
  def __init__(self):
@@ -16,7 +18,6 @@ class Game():
   self.last_score_update = 0
   self.last_speed_increase_time = pygame.time.get_ticks()
   self.clouds = [Cloud() for _ in range(3)]
-
 
   self.obstacles = []
 
@@ -43,6 +44,64 @@ class Game():
   self.font = pygame.font.Font(None, 40)
   self.last_score_update = pygame.time.get_ticks()
 
+  # Highscore
+  self.highscore_file = 'highscore.txt'
+  self.highscore = self.load_highscore()
+
+  # Martelo
+  self.hammer_active = False
+  self.hammer_end_time = 0
+
+  # Game over state
+  self.game_over = False
+  self.game_over_font = pygame.font.Font(None, 80)
+  self.button_font = pygame.font.Font(None, 50)
+  
+  # Reset button properties
+  self.reset_button_width = 80
+  self.reset_button_height = 80
+  self.reset_button_x = self.WIDTH // 2 - self.reset_button_width // 2
+  self.reset_button_y = self.HEIGHT // 2 + 50
+
+  # Controle de ondas de obstáculos
+  self.wave_mode = False
+  self.wave_start_time = 0
+  self.wave_duration = 4000  # 4 segundos de onda
+  self.wave_interval = 6000  # 6 segundos de calmaria
+  self.last_wave_switch = pygame.time.get_ticks()
+
+ def load_highscore(self):
+  if os.path.exists(self.highscore_file):
+   with open(self.highscore_file, 'r') as f:
+    try:
+     return int(f.read())
+    except Exception:
+     return 0
+  return 0
+
+ def save_highscore(self):
+  with open(self.highscore_file, 'w') as f:
+   f.write(str(self.highscore))
+
+ def reset_game(self):
+  """Reset the game state to start a new game"""
+  self.game_over = False
+  self.score = 0
+  self.game_speed = 10
+  self.x_pos_bg = 0
+  self.obstacles = []
+  self.power_ups = []
+  self.dino = dinossaur.Dino()
+  # clouds
+  self.clouds = []
+  for i in range(3):
+   cloud = Cloud()
+   cloud.rect.x = 1100 + (i * 300)
+   self.clouds.append(cloud)
+  self.last_score_update = pygame.time.get_ticks()
+  self.last_speed_increase_time = pygame.time.get_ticks()
+  self.hammer_active = False
+  self.hammer_end_time = 0
 
  def execute(self):
    self.run = True
@@ -60,23 +119,75 @@ class Game():
   for event in pygame.event.get():
    if event.type == pygame.QUIT:
     self.run = False
+   
+   if event.type == pygame.MOUSEBUTTONDOWN and self.game_over:
+    mouse_pos = pygame.mouse.get_pos()
+    reset_button_rect = pygame.Rect(self.reset_button_x, self.reset_button_y, self.reset_button_width, self.reset_button_height)
+    
+    if reset_button_rect.collidepoint(mouse_pos):
+     self.reset_game()
+
+ def get_difficulty_settings(self):
+    if self.score < 500:
+      return {
+        'max_obstacles': 1,
+        'min_distance': 1000,
+        'game_speed': 10
+      }
+    elif self.score < 2000:
+      return {
+        'max_obstacles': 2,
+        'min_distance': 700,
+        'game_speed': 13
+      }
+    else:
+      return {
+        'max_obstacles': 3,
+        'min_distance': 500,
+        'game_speed': 18
+      }
 
  def update(self):
+    if self.game_over:
+     return
+
     user_input = pygame.key.get_pressed()
     self.dino.update(user_input)
 
-    if len(self.obstacles) == 0:
-      obstacle_choice = random.randint(0, 2)
-      if obstacle_choice == 0:
-        self.obstacles.append(SmallCactus())
-      if obstacle_choice == 1:
-        self.obstacles.append(LargeCactus()) 
-      if obstacle_choice == 2:
-        self.obstacles.append(Bird())
+    # Alterna entre onda e calmaria
+    now = pygame.time.get_ticks()
+    if self.wave_mode:
+      if now - self.wave_start_time > self.wave_duration:
+        self.wave_mode = False
+        self.last_wave_switch = now
+    else:
+      if now - self.last_wave_switch > self.wave_interval:
+        self.wave_mode = True
+        self.wave_start_time = now
 
-    if len(self.power_ups) == 0 and random.randint(0, 1000) < 10:
+    # Níveis de dificuldade
+    settings = self.get_difficulty_settings()
+    self.game_speed = settings['game_speed']
+    max_obstacles = settings['max_obstacles']
+    min_distance = settings['min_distance']
+
+    def pode_adicionar_obstaculo():
+      return all(ob.rect.x < self.WIDTH - min_distance for ob in self.obstacles)
+
+    # Geração de obstáculos baseada no nível
+    if len(self.obstacles) < max_obstacles:
+      if len(self.obstacles) == 0 or pode_adicionar_obstaculo():
+        obstacle_choice = random.randint(0, 9)
+        if obstacle_choice < 5:
+          self.obstacles.append(SmallCactus())
+        elif obstacle_choice < 9:
+          self.obstacles.append(LargeCactus())
+        else:
+          self.obstacles.append(Bird())
+
+    # Martelo aparece com menos frequência
+    if len(self.power_ups) == 0 and random.randint(0, 1000) < 1:
         self.power_ups.append(Hammer())    
-
 
     current_time = pygame.time.get_ticks()
 
@@ -91,28 +202,69 @@ class Game():
           self.game_speed += 1
           self.last_speed_increase_time = current_time
 
-    for obstacle in self.obstacles:
+    # Atualiza highscore
+    if self.score > self.highscore:
+     self.highscore = self.score
+     self.save_highscore()
+
+    # Efeito do martelo: dinossauro pode destruir obstáculos ao colidir
+    if self.hammer_active:
+     if pygame.time.get_ticks() >= self.hammer_end_time:
+      self.hammer_active = False
+
+    for obstacle in self.obstacles[:]:  # Usar cópia da lista para evitar erro ao remover
      obstacle.update(self.game_speed, self.obstacles) 
      if self.dino.rect.colliderect(obstacle.rect):
-      pygame.time.delay(500)
-      self.run = False
-      
+      if self.hammer_active:
+       # Dinossauro com martelo destrói o obstáculo
+       self.obstacles.remove(obstacle)
+      else:
+       # Dinossauro sem martelo morre
+       self.game_over = True
+       return
       
     for power_up in self.power_ups:
       power_up.update(self.game_speed, self.power_ups)
       if self.dino.rect.colliderect(power_up.rect):
+        if power_up.type == "hammer":
+         self.hammer_active = True
+         self.hammer_end_time = pygame.time.get_ticks() + 4000
+         self.dino.activate_hammer_power()
+         self.power_ups.remove(power_up)
+         continue
         self.dino.activate_hammer_power()
         self.power_ups.remove(power_up)
 
     for cloud in self.clouds: 
       cloud.update()  
 
+ def draw_game_over_screen(self):
+   """Draw the game over screen with restart button"""
+   # Semi-transparent overlay
+   overlay = pygame.Surface((self.WIDTH, self.HEIGHT))
+   overlay.set_alpha(128)
+   overlay.fill((0, 0, 0))
+   self.screen.blit(overlay, (0, 0))
    
-  
-
+   # Game Over image
+   game_over_img = constants.GAME_OVER
+   img_rect = game_over_img.get_rect(center=(self.WIDTH // 2, self.HEIGHT // 2 - 100))
+   self.screen.blit(game_over_img, img_rect)
+   
+   # Final score
+   final_score_text = self.font.render(f"Final Score: {self.score}", True, (255, 255, 255))
+   score_rect = final_score_text.get_rect(center=(self.WIDTH // 2, self.HEIGHT // 2 - 30))
+   self.screen.blit(final_score_text, score_rect)
+   
+   # Reset button (using Reset.png image)
+   mouse_pos = pygame.mouse.get_pos()
+   reset_button_rect = pygame.Rect(self.reset_button_x, self.reset_button_y, self.reset_button_width, self.reset_button_height)
+   
+   reset_img = constants.RESET
+   reset_img_rect = reset_img.get_rect(center=(self.reset_button_x + self.reset_button_width // 2, self.reset_button_y + self.reset_button_height // 2))
+   self.screen.blit(reset_img, reset_img_rect)
 
  def draw(self):
-
   self.screen.fill(self.bg_color)
   for cloud in self.clouds:
     cloud.draw(self.screen)
@@ -121,7 +273,6 @@ class Game():
   if self.x_pos_bg <= -self.track.get_width():
    self.x_pos_bg = 0
   
-
   self.screen.blit(self.track, (self.x_pos_bg, 300))
   self.screen.blit(self.track, (self.x_pos_bg + self.track.get_width(), 300))
 
@@ -130,9 +281,16 @@ class Game():
   for obstacle in self.obstacles:
    obstacle.draw(self.screen)
 
+  for power_up in self.power_ups:
+   power_up.draw(self.screen)
+
   score_text =  self.font.render(f'Score: {self.score}', True, (0, 0, 0))
   self.screen.blit(score_text, (600, 50))
+  highscore_text = self.font.render(f'Recorde: {self.highscore}', True, (0, 0, 0))
+  self.screen.blit(highscore_text, (600, 90))
 
-  pygame.display.update()
+  # Draw game over screen if game is over
+  if self.game_over:
+   self.draw_game_over_screen()
 
-  
+  pygame.display.update() 
