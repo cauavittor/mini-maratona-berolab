@@ -70,6 +70,11 @@ class Game():
   self.wave_interval = 6000  # 6 segundos de calmaria
   self.last_wave_switch = pygame.time.get_ticks()
 
+  # Sistema de sons simples
+  self.sounds = {}
+  self.sounds_enabled = True
+  self.game_started = False
+
  def load_highscore(self):
   if os.path.exists(self.highscore_file):
    with open(self.highscore_file, 'r') as f:
@@ -78,6 +83,40 @@ class Game():
     except Exception:
      return 0
   return 0
+
+ def setup_sounds(self, sound_paths):
+  """Configura os sons do jogo com os caminhos fornecidos"""
+  pygame.mixer.init()
+  
+  # Carrega apenas os três sons disponíveis
+  sound_files = {
+    'jump': sound_paths.get('jump', ''),
+    'death': sound_paths.get('death', ''),
+    'score': sound_paths.get('score', '')
+  }
+  
+  # Carrega os sons
+  for sound_name, file_path in sound_files.items():
+    if file_path and os.path.exists(file_path):
+      try:
+        self.sounds[sound_name] = pygame.mixer.Sound(file_path)
+        self.sounds[sound_name].set_volume(0.7)
+        print(f"✅ Som carregado: {sound_name}")
+      except pygame.error as e:
+        print(f"❌ Erro ao carregar {sound_name}: {e}")
+    else:
+      print(f"⚠️ Arquivo não encontrado: {file_path}")
+
+ def play_sound(self, sound_name):
+  """Reproduz um efeito sonoro"""
+  if not self.sounds_enabled or sound_name not in self.sounds:
+    return
+  try:
+    self.sounds[sound_name].play()
+  except:
+    pass
+
+
 
  def save_highscore(self):
   with open(self.highscore_file, 'w') as f:
@@ -102,6 +141,9 @@ class Game():
   self.last_speed_increase_time = pygame.time.get_ticks()
   self.hammer_active = False
   self.hammer_end_time = 0
+  
+  # Reinicia o jogo
+  self.game_started = True
 
  def execute(self):
    self.run = True
@@ -119,6 +161,16 @@ class Game():
   for event in pygame.event.get():
    if event.type == pygame.QUIT:
     self.run = False
+   
+   if event.type == pygame.KEYDOWN:
+    # Controles de som
+    if event.key == pygame.K_s:  # S para sons
+     self.sounds_enabled = not self.sounds_enabled
+   
+   if event.type == pygame.USEREVENT:
+    # Eventos customizados
+    if event.dict.get('action') == 'jump':
+     self.play_sound('jump')
    
    if event.type == pygame.MOUSEBUTTONDOWN and self.game_over:
     mouse_pos = pygame.mouse.get_pos()
@@ -150,6 +202,10 @@ class Game():
  def update(self):
     if self.game_over:
      return
+
+    # Marca o jogo como iniciado
+    if not self.game_started:
+     self.game_started = True
 
     user_input = pygame.key.get_pressed()
     self.dino.update(user_input)
@@ -191,7 +247,7 @@ class Game():
 
     current_time = pygame.time.get_ticks()
 
-    if current_time - self.last_score_update < 1000: 
+    if current_time - self.last_score_update < 30000:  # Aumentado para 30000ms (30 segundos)
      pygame.time.delay(20)
      self.score += 1
      self.last_score_update = current_time 
@@ -201,6 +257,7 @@ class Game():
         if current_time - self.last_speed_increase_time >= 1000:
           self.game_speed += 1
           self.last_speed_increase_time = current_time
+          self.play_sound('score')  # Som de pontuação
 
     # Atualiza highscore
     if self.score > self.highscore:
@@ -220,6 +277,7 @@ class Game():
        self.obstacles.remove(obstacle)
       else:
        # Dinossauro sem martelo morre
+       self.play_sound('death')
        self.game_over = True
        return
       
@@ -264,6 +322,20 @@ class Game():
    reset_img_rect = reset_img.get_rect(center=(self.reset_button_x + self.reset_button_width // 2, self.reset_button_y + self.reset_button_height // 2))
    self.screen.blit(reset_img, reset_img_rect)
 
+ def draw_start_screen(self):
+        overlay = pygame.Surface((self.WIDTH, self.HEIGHT))
+        overlay.set_alpha(180)
+        overlay.fill((255, 255, 255))
+        self.screen.blit(overlay, (0, 0))
+        start_img = constants.START_BUTTON
+        img_rect = start_img.get_rect(center=(self.WIDTH // 2, self.HEIGHT // 2))
+        self.screen.blit(start_img, img_rect)
+        # Mensagem opcional
+        font = pygame.font.Font(None, 40)
+        text = font.render('Clique ou pressione qualquer tecla para começar', True, (0, 0, 0))
+        text_rect = text.get_rect(center=(self.WIDTH // 2, self.HEIGHT // 2 + 100))
+        self.screen.blit(text, text_rect)
+
  def draw(self):
   self.screen.fill(self.bg_color)
   for cloud in self.clouds:
@@ -276,21 +348,23 @@ class Game():
   self.screen.blit(self.track, (self.x_pos_bg, 300))
   self.screen.blit(self.track, (self.x_pos_bg + self.track.get_width(), 300))
 
-  self.dino.draw(self.screen)
-
-  for obstacle in self.obstacles:
-   obstacle.draw(self.screen)
-
-  for power_up in self.power_ups:
-   power_up.draw(self.screen)
-
-  score_text =  self.font.render(f'Score: {self.score}', True, (0, 0, 0))
-  self.screen.blit(score_text, (600, 50))
-  highscore_text = self.font.render(f'Recorde: {self.highscore}', True, (0, 0, 0))
-  self.screen.blit(highscore_text, (600, 90))
-
-  # Draw game over screen if game is over
-  if self.game_over:
-   self.draw_game_over_screen()
-
+  if not self.game_started:
+    self.draw_start_screen()
+  else:
+    self.dino.draw(self.screen)
+    for obstacle in self.obstacles:
+      obstacle.draw(self.screen)
+    for power_up in self.power_ups:
+      power_up.draw(self.screen)
+    score_text =  self.font.render(f'Score: {self.score}', True, (0, 0, 0))
+    self.screen.blit(score_text, (600, 50))
+    highscore_text = self.font.render(f'Recorde: {self.highscore}', True, (0, 0, 0))
+    self.screen.blit(highscore_text, (600, 90))
+    # Informações de controle de som
+    sound_info_font = pygame.font.Font(None, 25)
+    sound_info = sound_info_font.render('S: Liga/Desliga Sons', True, (100, 100, 100))
+    self.screen.blit(sound_info, (10, 10))
+    # Draw game over screen if game is over
+    if self.game_over:
+      self.draw_game_over_screen()
   pygame.display.update() 
