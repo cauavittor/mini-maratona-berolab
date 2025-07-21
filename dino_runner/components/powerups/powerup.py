@@ -7,7 +7,7 @@ class PowerUp(pygame.sprite.Sprite):
         self.type = type
         self.rect = self.image.get_rect()
         self.rect.x = 1100  
-        self.rect.y = 300   
+        self.rect.y = 250
         self.speed = 10     
 
     def update(self, game_speed, powerups):

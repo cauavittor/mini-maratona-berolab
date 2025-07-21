@@ -2,14 +2,12 @@ import pygame
 import os
 import pygame.image
 
-# Global Constants
 TITLE = "Chrome Dino Runner"
 SCREEN_HEIGHT = 600
 SCREEN_WIDTH = 1100
 FPS = 30
 IMG_DIR = os.path.join(os.path.dirname(__file__), "..", "assets")
 
-# Assets Constants
 ICON = pygame.image.load(os.path.join(IMG_DIR, "DinoWallpaper.png"))
 
 RUNNING = [
@@ -22,14 +20,8 @@ RUNNING_SHIELD = [
     pygame.image.load(os.path.join(IMG_DIR, "Dino/DinoRun2Shield.png")),
 ]
 
-RUNNING_HAMMER = [
-    pygame.image.load(os.path.join(IMG_DIR, "Dino/DinoRun1Hammer.png")),
-    pygame.image.load(os.path.join(IMG_DIR, "Dino/DinoRun2Hammer1.png")),
-]
-
 JUMPING = pygame.image.load(os.path.join(IMG_DIR, "Dino/DinoJump.png"))
 JUMPING_SHIELD = pygame.image.load(os.path.join(IMG_DIR, "Dino/DinoJumpShield.png"))
-JUMPING_HAMMER = pygame.image.load(os.path.join(IMG_DIR, "Dino/DinoJumpHammer.png"))
 
 DUCKING = [
     pygame.image.load(os.path.join(IMG_DIR, "Dino/DinoDuck1.png")),
@@ -39,11 +31,6 @@ DUCKING = [
 DUCKING_SHIELD = [
     pygame.image.load(os.path.join(IMG_DIR, "Dino/DinoDuck1Shield.png")),
     pygame.image.load(os.path.join(IMG_DIR, "Dino/DinoDuck2Shield.png")),
-]
-
-DUCKING_HAMMER = [
-    pygame.image.load(os.path.join(IMG_DIR, "Dino/DinoDuck1Hammer.png")),
-    pygame.image.load(os.path.join(IMG_DIR, "Dino/DinoDuck2Hammer.png")),
 ]
 
 SMALL_CACTUS = [
@@ -64,8 +51,8 @@ BIRD = [
 
 CLOUD = pygame.image.load(os.path.join(IMG_DIR, 'Other/Cloud.png'))
 SHIELD = pygame.image.load(os.path.join(IMG_DIR, 'Other/shield.png'))
-HAMMER = pygame.image.load(os.path.join(IMG_DIR, 'Other/hammer.png'))
-HAMMER_TYPE = "hammer"
+GUITARRA = pygame.image.load(os.path.join(IMG_DIR, 'Other/guitar.png'))
+GUITARRA_TYPE = "guitarra"
 
 BG = pygame.image.load(os.path.join(IMG_DIR, 'Other/Track.png'))
 
@@ -77,6 +64,21 @@ RESET = pygame.image.load(os.path.join(IMG_DIR, 'Other/Reset.png'))
 
 START_BUTTON = pygame.image.load(os.path.join(IMG_DIR, 'Other/start.png'))
 
+DINO_ROCK = pygame.image.load(os.path.join(IMG_DIR, 'Other/dinoRock.png'))
+
+RUNNING_ROCK = [
+    pygame.transform.scale(pygame.image.load(os.path.join(IMG_DIR, "Dino/dinoRock1.png")), (110, 120)),
+    pygame.transform.scale(pygame.image.load(os.path.join(IMG_DIR, "Dino/dinoRock2.png")), (110, 120)),
+    pygame.transform.scale(pygame.image.load(os.path.join(IMG_DIR, "Dino/dinoRock3.png")), (110, 120)),
+]
+JUMPING_ROCK = pygame.transform.scale(pygame.image.load(os.path.join(IMG_DIR, 'Dino/dinoRock1.png')), (110, 120))
+
+DINO_ROCK_STATIC = pygame.image.load(os.path.join(IMG_DIR, 'Other/dinoRock.png'))
+
+DUCKING_ROCK = [
+    pygame.transform.scale(pygame.image.load(os.path.join(IMG_DIR, "Dino/dinoRockDuck1.png")), (110, 120)),
+    pygame.transform.scale(pygame.image.load(os.path.join(IMG_DIR, "Dino/dinoRockDuck2.png")), (110, 120)),
+]
 
 DEFAULT_TYPE = "default"
 SHIELD_TYPE = "shield"

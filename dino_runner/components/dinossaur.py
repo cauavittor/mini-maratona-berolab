@@ -1,15 +1,11 @@
-from dino_runner.utils.constants import  RUNNING, ICON, JUMPING, JUMPING_HAMMER, JUMPING_SHIELD, DUCKING, DUCKING_HAMMER, DUCKING_SHIELD, DEFAULT_TYPE, SHIELD_TYPE, RUNNING_SHIELD, RUNNING_HAMMER
+from dino_runner.utils.constants import  RUNNING, ICON, JUMPING, JUMPING_SHIELD, DUCKING, DUCKING_SHIELD, DEFAULT_TYPE, SHIELD_TYPE, RUNNING_SHIELD, DINO_ROCK_STATIC, RUNNING_ROCK, JUMPING_ROCK, DUCKING_ROCK
 import os
 import pygame
-
-
 
 class Dino(pygame.sprite.Sprite):
   X_POS = 80
   Y_POS = 220
   Y_POS_DUCK = 290
-
-
 
   def __init__(self):
     super().__init__()
@@ -27,24 +23,16 @@ class Dino(pygame.sprite.Sprite):
     self.has_power_up = False
     self.power_up_time = 0
 
-
-
     self.hitbox = pygame.Rect(self.rect.x + 10, self.rect.y + 5, self.rect.width - 20, self.rect.height - 10)
 
-
   def update_hitbox(self):  
-  
     self.hitbox.x = self.rect.x + 10      
     self.hitbox.y = self.rect.y + 5
-
 
   def draw(self, screen):
     screen.blit(self.image, self.rect)
 
-
   def update(self, user_input):
-
-    # Verificar se o poder do martelo acabou
     if self.has_power_up and pygame.time.get_ticks() > self.power_up_time:
       self.has_power_up = False
       self.type = DEFAULT_TYPE
@@ -56,13 +44,12 @@ class Dino(pygame.sprite.Sprite):
     else:
       self.run()
   
-    
-
     if user_input[pygame.K_SPACE] or user_input[pygame.K_UP] and not self.is_jumping:
       self.is_jumping = True
       self.is_duck = False
       self.is_running = False
       self.rect.y = self.Y_POS
+      pygame.event.post(pygame.event.Event(pygame.USEREVENT, {'action': 'jump'}))
 
     if user_input[pygame.K_DOWN] and not self.is_duck:
       self.is_duck = True 
@@ -74,14 +61,12 @@ class Dino(pygame.sprite.Sprite):
       self.is_duck = False
       self.is_jumping = False
 
-  
     if self.step_index >= 10:
       self.step_index = 0
 
   def run(self):  
-
-    if self.has_power_up and self.type == "hammer":
-      self.image = RUNNING_HAMMER[self.step_index // 5]
+    if self.has_power_up and self.type == "guitarra":
+      self.image = RUNNING_ROCK[self.step_index // 5 % 3]
     elif self.type == SHIELD_TYPE:
       self.image = RUNNING_SHIELD[self.step_index // 5]
     else: 
@@ -92,8 +77,8 @@ class Dino(pygame.sprite.Sprite):
     self.step_index += 1
 
   def jump(self):
-    if self.has_power_up and self.type == "hammer":
-        self.image = JUMPING_HAMMER
+    if self.has_power_up and self.type == "guitarra":
+        self.image = JUMPING_ROCK
     elif self.type == SHIELD_TYPE:
         self.image = JUMPING_SHIELD
     else:
@@ -107,11 +92,9 @@ class Dino(pygame.sprite.Sprite):
       self.is_jumping = False
       self.jump_velocity = 10
 
-
   def duck(self):
-
-    if self.has_power_up and self.type == "hammer":
-        self.image = DUCKING_HAMMER[self.step_index // 5]
+    if self.has_power_up and self.type == "guitarra":
+        self.image = DUCKING_ROCK[self.step_index // 5 % 2]
     elif self.type == SHIELD_TYPE:
         self.image = DUCKING_SHIELD[self.step_index // 5]
     else:
@@ -121,10 +104,10 @@ class Dino(pygame.sprite.Sprite):
     self.rect.y = self.Y_POS_DUCK
     self.step_index += 1
     
-  def activate_hammer_power(self):
+  def activate_guitarra_power(self):
     self.has_power_up = True
-    self.type = "hammer"
-    self.power_up_time = pygame.time.get_ticks() + 4000  # 4 segundos
+    self.type = "guitarra"
+    self.power_up_time = pygame.time.get_ticks() + 4000
 
 
 
